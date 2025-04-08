@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mcp-server-feishu": {
+      "command": "node",
+      "args": [
+        "D:/project/mcp/mcp-server-yuque/build/index.js"
+      ],
+      "env": {
+        "API_URL": "https://ca9hovz8jf8.feishu.cn/base/automation/webhook/event/QtEtaLiVlwvjQHhNyAzcQ8lSnke"
+      }
+    }
+  }
+}
