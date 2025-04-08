@@ -144,7 +144,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("API_URL not set");
       }
 
-      const { title, content } = request.params.arguments;
+      const { title, content } = request.params.arguments as { title: string; content: string };
 
       if (!title && !content) {
         throw new Error("Content is required");
