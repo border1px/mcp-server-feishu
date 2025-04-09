@@ -7,6 +7,14 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { FeishuBaseClient } from "./feishu.js";
 
+import { getParamValue, getAuthValue } from "@chatmcp/sdk/utils/index.js";
+import { RestServerTransport } from "@chatmcp/sdk/server/rest.js";
+
+// mcp.so
+let apiUrl = getParamValue("api_url") || "";
+const mode = getParamValue("mode") || "stdio";
+const port = getParamValue("port") || 9593;
+const endpoint = getParamValue("endpoint") || "/rest";
 
 const server = new Server(
   {
@@ -22,18 +30,19 @@ const server = new Server(
   }
 );
 
-function parseArgs() {
-  const args: Record<string, string> = {};
-  process.argv.slice(2).forEach((arg) => {
-    if (arg.startsWith("--")) {
-      const [key, value] = arg.slice(2).split("=");
-      args[key] = value;
-    }
-  });
-  return args;
-}
-const args = parseArgs();
-const apiUrl = args.api_url || process.env.API_URL || "";
+
+// function parseArgs() {
+//   const args: Record<string, string> = {};
+//   process.argv.slice(2).forEach((arg) => {
+//     if (arg.startsWith("--")) {
+//       const [key, value] = arg.slice(2).split("=");
+//       args[key] = value;
+//     }
+//   });
+//   return args;
+// }
+// const args = parseArgs();
+// const apiUrl = args.api_url || process.env.API_URL || "";
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
@@ -61,12 +70,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  // mcp.so
+  apiUrl = apiUrl || getAuthValue(request, "api_url");
+
+  if (!apiUrl) {
+    throw new Error("API_URL not set");
+  }
+
   switch (request.params.name) {
     case"create_note": {
-      if (!apiUrl) {
-        throw new Error("API_URL not set");
-      }
-
       const { title, content } = request.params.arguments as { title: string; content: string };
 
       if (!title && !content) {
@@ -94,8 +106,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  if (mode === "rest") {
+    const transport = new RestServerTransport({
+      port,
+      endpoint,
+    });
+    await server.connect(transport);
+
+    await transport.startServer();
+  } else {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  }
 }
 
 main().catch((error) => {
